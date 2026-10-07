@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "dogy": {
+      "command": "powershell.exe",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$ErrorActionPreference='Stop'; & (Join-Path $env:LOCALAPPDATA 'MediaDownloader\\Agent\\mcp.ps1'); exit $LASTEXITCODE"
+      ]
+    }
+  }
+}
