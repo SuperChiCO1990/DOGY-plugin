@@ -7,6 +7,12 @@ $utf8 = [Text.UTF8Encoding]::new($false)
 $data = Join-Path $env:LOCALAPPDATA 'MediaDownloader\Agent'
 $runtimePath = Join-Path $data 'runtime.json'
 Add-Type -Path (Join-Path $PSScriptRoot 'bridge.cs')
+function Get-DogyHash([string]$path) {
+    $stream = [IO.File]::OpenRead($path)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
+    finally { $stream.Dispose(); $sha.Dispose() }
+}
 function Test-Dogy([string]$candidate) {
     if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { return $null }
     try {
@@ -53,7 +59,21 @@ try {
         }
         $api = 'https://api.github.com/repos/' + $source.repository + '/releases/latest'
         $headers = @{ 'User-Agent' = 'DOGY-Plugin'; 'Accept' = 'application/vnd.github+json' }
-        $release = Invoke-RestMethod -Uri $api -Headers $headers
+        try {
+            $release = Invoke-RestMethod -Uri $api -Headers $headers
+        } catch {
+            $status = 0
+            if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
+            if ($status -notin @(403, 429)) { throw }
+            $base = 'https://github.com/' + $source.repository + '/releases'
+            $publicManifest = Invoke-RestMethod -Uri ($base + '/latest/download/dogy-release.json') -Headers $headers
+            if ($publicManifest.version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid public release version.' }
+            $tag = 'v' + $publicManifest.version
+            $release = @{ tag_name = $tag; assets = @(
+                @{ name = $source.executable_asset; browser_download_url = $base + '/download/' + $tag + '/' + $source.executable_asset },
+                @{ name = $source.manifest_asset; browser_download_url = $base + '/download/' + $tag + '/' + $source.manifest_asset }
+            ) }
+        }
         $asset = @($release.assets | Where-Object { $_.name -eq $source.executable_asset })
         $manifestAsset = @($release.assets | Where-Object { $_.name -eq $source.manifest_asset })
         if ($asset.Count -ne 1 -or $manifestAsset.Count -ne 1) { throw 'Release must contain DOGY.exe and dogy-release.json.' }
@@ -70,11 +90,11 @@ try {
         $install = Join-Path $env:LOCALAPPDATA ('MediaDownloader\DOGY\' + $manifest.sha256.ToLower())
         [IO.Directory]::CreateDirectory($install) | Out-Null
         $selected = Join-Path $install 'DOGY.exe'
-        if (-not (Test-Path -LiteralPath $selected) -or (Get-FileHash -LiteralPath $selected -Algorithm SHA256).Hash -ne $manifest.sha256) {
+        if (-not (Test-Path -LiteralPath $selected) -or (Get-DogyHash $selected) -ne $manifest.sha256) {
             $temporary = Join-Path $install ([Guid]::NewGuid().ToString('N') + '.download')
             try {
                 Invoke-WebRequest -UseBasicParsing -Uri $asset[0].browser_download_url -Headers $headers -OutFile $temporary
-                if ((Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash -ne $manifest.sha256) { throw 'Downloaded EXE hash mismatch.' }
+                if ((Get-DogyHash $temporary) -ne $manifest.sha256) { throw 'Downloaded EXE hash mismatch.' }
                 if ((Get-Item -LiteralPath $temporary).Length -ne [long]$manifest.size_bytes) { throw 'Downloaded EXE size mismatch.' }
                 Move-Item -LiteralPath $temporary -Destination $selected -Force
             } finally {
