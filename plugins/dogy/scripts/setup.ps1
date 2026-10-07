@@ -53,7 +53,21 @@ try {
         }
         $api = 'https://api.github.com/repos/' + $source.repository + '/releases/latest'
         $headers = @{ 'User-Agent' = 'DOGY-Plugin'; 'Accept' = 'application/vnd.github+json' }
-        $release = Invoke-RestMethod -Uri $api -Headers $headers
+        try {
+            $release = Invoke-RestMethod -Uri $api -Headers $headers
+        } catch {
+            $status = 0
+            if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
+            if ($status -notin @(403, 429)) { throw }
+            $base = 'https://github.com/' + $source.repository + '/releases'
+            $publicManifest = Invoke-RestMethod -Uri ($base + '/latest/download/dogy-release.json') -Headers $headers
+            if ($publicManifest.version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid public release version.' }
+            $tag = 'v' + $publicManifest.version
+            $release = @{ tag_name = $tag; assets = @(
+                @{ name = $source.executable_asset; browser_download_url = $base + '/download/' + $tag + '/' + $source.executable_asset },
+                @{ name = $source.manifest_asset; browser_download_url = $base + '/download/' + $tag + '/' + $source.manifest_asset }
+            ) }
+        }
         $asset = @($release.assets | Where-Object { $_.name -eq $source.executable_asset })
         $manifestAsset = @($release.assets | Where-Object { $_.name -eq $source.manifest_asset })
         if ($asset.Count -ne 1 -or $manifestAsset.Count -ne 1) { throw 'Release must contain DOGY.exe and dogy-release.json.' }
