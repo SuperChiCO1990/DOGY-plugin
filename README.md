@@ -12,10 +12,19 @@
 
 本机程序记录与启动器保存到 `%LOCALAPPDATA%\MediaDownloader\Agent`；自动下载的
 EXE 保存到 `%LOCALAPPDATA%\MediaDownloader\DOGY`。桌面不会增加配置文件夹。
-插件更新与 DOGY 更新是两件事；本版本不包含软件内更新提示。
+插件版本 1.1.0，DOGY 程序版本仍为 1.0.0，两者独立。
+每个新任务首次使用时，Agent 刷新 DOGY 插件目录并同步安装缓存；离线或命令不支持时保留现有下载能力。不是后台定时更新。
+旧插件首次可让 Agent 执行：
+
+```text
+codex plugin marketplace upgrade dogy --json
+codex plugin add dogy@dogy --json
+```
+
+随后新建任务；必要时重启客户端。下载完成后，支持本机媒体预览的 Codex 桌面聊天会按指令嵌入视频，其他客户端提供实际文件路径或链接。
 
 ## 发布范围
 
 仅发布此仓库目录里的文件。不要从原 DOGY 项目执行 git add -A 或整体上传。
 正式 Release 附件需要 DOGY.exe、dogy-release.json 以及第三方许可说明。
-下载来源：`SuperChiCO1990/DOGY-plugin` 的最新正式 Release。v1.13.0 已发布为正式版本，支持软件内更新检查。
+下载来源：`SuperChiCO1990/DOGY-plugin` 的最新正式 Release。当前正式程序版 v1.0.0 支持软件内更新检查。
