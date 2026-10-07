@@ -7,6 +7,12 @@ $utf8 = [Text.UTF8Encoding]::new($false)
 $data = Join-Path $env:LOCALAPPDATA 'MediaDownloader\Agent'
 $runtimePath = Join-Path $data 'runtime.json'
 Add-Type -Path (Join-Path $PSScriptRoot 'bridge.cs')
+function Get-DogyHash([string]$path) {
+    $stream = [IO.File]::OpenRead($path)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
+    finally { $stream.Dispose(); $sha.Dispose() }
+}
 function Test-Dogy([string]$candidate) {
     if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { return $null }
     try {
@@ -84,11 +90,11 @@ try {
         $install = Join-Path $env:LOCALAPPDATA ('MediaDownloader\DOGY\' + $manifest.sha256.ToLower())
         [IO.Directory]::CreateDirectory($install) | Out-Null
         $selected = Join-Path $install 'DOGY.exe'
-        if (-not (Test-Path -LiteralPath $selected) -or (Get-FileHash -LiteralPath $selected -Algorithm SHA256).Hash -ne $manifest.sha256) {
+        if (-not (Test-Path -LiteralPath $selected) -or (Get-DogyHash $selected) -ne $manifest.sha256) {
             $temporary = Join-Path $install ([Guid]::NewGuid().ToString('N') + '.download')
             try {
                 Invoke-WebRequest -UseBasicParsing -Uri $asset[0].browser_download_url -Headers $headers -OutFile $temporary
-                if ((Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash -ne $manifest.sha256) { throw 'Downloaded EXE hash mismatch.' }
+                if ((Get-DogyHash $temporary) -ne $manifest.sha256) { throw 'Downloaded EXE hash mismatch.' }
                 if ((Get-Item -LiteralPath $temporary).Length -ne [long]$manifest.size_bytes) { throw 'Downloaded EXE size mismatch.' }
                 Move-Item -LiteralPath $temporary -Destination $selected -Force
             } finally {
