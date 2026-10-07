@@ -1,0 +1,7 @@
+Copyright (c) 2026 DOGY. All rights reserved.
+
+This repository distributes the DOGY Agent connection package. It does not
+release the DOGY application source code under an open-source license.
+Users may install and use this connection package with their own DOGY copy.
+No permission to redistribute modified packages or the application is granted
+by this notice. Third-party components retain their respective licenses.
