@@ -1,0 +1,5 @@
+runtime.json
+*.exe
+*.zip
+*.download
+__pycache__/
