@@ -8,6 +8,10 @@
     "displayName": "抖记DOGY",
     "shortDescription": "本机视频和图集下载",
     "developerName": "SuperChiCO1990",
+    "logo": "./assets/logo.png",
+    "logoDark": "./assets/logo.png",
+    "composerIcon": "./assets/logo.png",
+    "composerIconDark": "./assets/logo.png",
     "category": "Productivity"
   }
 }
