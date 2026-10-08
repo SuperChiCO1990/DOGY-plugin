@@ -1,7 +1,6 @@
 # 抖记DOGY Plugin
 
 面向 Windows 的本机 Agent 插件。通过同一份 DOGY EXE 调用解析和下载工具。
-本仓库只包含连接层，DOGY 核心源码不在此仓库中。源码未以开源许可证发布。
 
 ## 安装
 
@@ -25,6 +24,5 @@ codex plugin add dogy@dogy --json
 
 ## 发布范围
 
-仅发布此仓库目录里的文件。不要从原 DOGY 项目执行 git add -A 或整体上传。
 正式 Release 附件需要 DOGY.exe、dogy-release.json 以及第三方许可说明。
 下载来源：`SuperChiCO1990/DOGY-plugin` 的最新正式 Release。当前正式程序版 v1.0.1 支持软件内更新检查。
