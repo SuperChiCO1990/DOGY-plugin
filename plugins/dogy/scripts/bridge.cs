@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 // Only transport plumbing: the closed DOGY executable implements all tools.
@@ -43,7 +44,9 @@ public static class DogyBridge {
         var info = new ProcessStartInfo(executable, "doctor") {
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardInput = true, RedirectStandardOutput = true,
-            RedirectStandardError = true
+            RedirectStandardError = true,
+            StandardOutputEncoding = new UTF8Encoding(false),
+            StandardErrorEncoding = new UTF8Encoding(false)
         };
         using (var child = Process.Start(info)) {
             child.StandardInput.Close();

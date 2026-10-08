@@ -11,7 +11,7 @@
 
 本机程序记录与启动器保存到 `%LOCALAPPDATA%\MediaDownloader\Agent`；自动下载的
 EXE 保存到 `%LOCALAPPDATA%\MediaDownloader\DOGY`。桌面不会增加配置文件夹。
-插件版本 1.1.0，DOGY 程序版本为 1.0.3，两者独立。
+插件版本 1.2.0，DOGY 程序版本为 1.1.0，两者独立。
 每个新任务首次使用时，Agent 刷新 DOGY 插件目录并同步安装缓存；离线或命令不支持时保留现有下载能力。不是后台定时更新。
 旧插件首次可让 Agent 执行：
 
@@ -22,7 +22,11 @@ codex plugin add dogy@dogy --json
 
 随后新建任务；必要时重启客户端。下载完成后，支持本机媒体预览的 Codex 桌面聊天会按指令嵌入视频，其他客户端提供实际文件路径或链接。
 
+新版启动器在每次 MCP 连接时选择已验证的较新本机 DOGY，并最多每 6 小时触发一次后台正式 Release 检查。新版校验 SHA256、大小、版本和运行环境后供下一次连接自动使用；离线或更新失败保留已验证程序，不降级，不拖住当前连接，也不替换正在下载的程序。旧启动器需更新插件后重新执行一次 `scripts/setup.ps1`。
+
+支持进度的新程序提供 `dogy_download_start` 与 `dogy_download_status`。Agent 可在下载期间查询并汇报解析、画面/声音下载、合并与保存结果；同步下载也支持标准 MCP 进度通知，显示方式取决于客户端。任务进度属于本次 MCP 连接，不同步到桌面面板。
+
 ## 发布范围
 
 正式 Release 附件需要 DOGY.exe、dogy-release.json 以及第三方许可说明。
-下载来源：`SuperChiCO1990/DOGY-plugin` 的最新正式 Release。当前正式程序版 v1.0.3 支持软件内更新检查。
+下载来源：`SuperChiCO1990/DOGY-plugin` 的最新正式 Release。当前正式程序版 v1.1.0 支持软件内更新检查与 Agent 下载进度查询。
