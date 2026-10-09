@@ -11,7 +11,7 @@
 
 本机程序记录与启动器保存到 `%LOCALAPPDATA%\MediaDownloader\Agent`；自动下载的
 EXE 保存到 `%LOCALAPPDATA%\MediaDownloader\DOGY`。桌面不会增加配置文件夹。
-插件版本 1.0.0，DOGY 程序版本为 1.0.0，两者独立。
+插件版本 1.0.1，DOGY 程序版本为 1.0.1，两者独立。
 每个新任务首次使用时，Agent 刷新 DOGY 插件目录并同步安装缓存；离线或命令不支持时保留现有下载能力。不是后台定时更新。
 旧插件首次可让 Agent 执行：
 
@@ -29,4 +29,10 @@ codex plugin add dogy@dogy --json
 ## 发布范围
 
 正式 Release 附件需要 DOGY.exe、dogy-release.json 以及第三方许可说明。
-下载来源：`SuperChiCO1990/DOGY-plugin` 的最新正式 Release。当前正式程序版 v1.0.0 支持软件内更新检查与 Agent 下载进度查询。
+下载来源：`SuperChiCO1990/DOGY-plugin` 的最新正式 Release。当前正式程序版 v1.0.1 支持软件内更新检查与 Agent 下载进度查询。
+
+## 1.0.1 更新
+
+- 程序修复抖音解析 HTTP 403，并完善取消下载与异常恢复。
+- 插件先展示视频标题、平台、时长、画质与预计大小，再选择下载或分析方式。
+- 明确视频笔记分类和临时分析材料的清理范围。
