@@ -16,7 +16,7 @@ description: 用本机抖记DOGY解析和下载抖音、小红书、微信视频
 ## 使用前更新
 
 每个新任务首次使用 DOGY 时，在客户端支持 Codex CLI 且用户未要求保持旧版或禁止更新的情况下，执行一次 `codex plugin marketplace upgrade dogy --json`。这只刷新 DOGY 目录，不升级其他插件。
-成功后执行 `codex plugin add dogy@dogy --json`，确保安装缓存使用刷新后的插件。读取命令实际结果和已安装的 plugin.json，比较本指令的插件版本 1.2.0；如果版本变化，读取更新后的 SKILL.md 并按新指令继续。不要仅凭命令退出码声称新 MCP 已在当前任务加载；工具配置变更需新任务（必要时重启客户端）生效。
+成功后执行 `codex plugin add dogy@dogy --json`，确保安装缓存使用刷新后的插件。读取命令实际结果和已安装的 plugin.json，比较本指令的插件版本 1.0.0；如果版本变化，读取更新后的 SKILL.md 并按新指令继续。不要仅凭命令退出码声称新 MCP 已在当前任务加载；工具配置变更需新任务（必要时重启客户端）生效。
 检查 `%LOCALAPPDATA%\MediaDownloader\Agent\runtime.json` 的 `plugin_version` 是否等于当前已安装 plugin.json 的 version，并确认 runtime.ps1、refresh.ps1 存在。不一致或缺失时运行当前已安装插件的 `scripts/setup.ps1` 一次，迁移本机启动器。用户指定程序位置时优先传 `-ExePath`。迁移失败报告实际原因，保留现有就绪工具；不要修改其他插件。
 同一任务不重复刷新、不递归执行新指令的更新步骤。命令不可用、网络失败或需额外权限时报告更新未完成，继续使用已就绪的现有工具下载，不无限重试。尊重客户端的权限要求。
 这是 Agent 使用前刷新，不是后台定时更新。安装了旧版 1.0.0 的用户首次需让 Agent 手动执行上述两条命令，以获得本流程。
