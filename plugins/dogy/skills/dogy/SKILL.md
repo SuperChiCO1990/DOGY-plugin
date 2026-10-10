@@ -38,7 +38,7 @@ description: 用本机抖记DOGY解析、下载和分析抖音、小红书、微
 
 选择“仅下载”时执行下方下载流程，不启动转录或分析。新版下载结果自动登记本机资料库并返回 `library_id`，登记不代表已经分析；仍须提供真实文件位置和本地预览。
 
-选择“下载分析”时，先执行下载流程并保留原视频，再读取 [视频资料库与分析流程](references/video-library.md)，用真实可用的资料库和分析工具继续。优先用 `dogy_analyze_start` 与 `dogy_analyze_status` 准备本机语音转录和抽帧，读取全部分页转录和必要抽样画面后由 Codex 实际分析，保存到 SQLite 资料库、分类归档并清理任务临时文件。不能仅因 DOGY 没有某个接口就认定 Agent 无法分析；旧程序仍可检查 Agent 实际可用的转录和画面工具，但必须报告缺口，不能把普通下载当成完整分析。
+选择“下载分析”时，先执行下载流程并保留原视频，再读取 [视频资料库与分析流程](references/video-library.md)，用真实可用的资料库和分析工具继续。DOGY 1.1.1 默认每 1 秒准备画面，明显画面变化处加密至约 0.5 秒，并删除连续完全相同的取样画面；这是变化检测，不是语义关键点识别，短暂小字仍可能漏检。优先用 `dogy_analyze_start` 与 `dogy_analyze_status` 准备本机语音转录和抽帧，读取全部分页转录和必要抽样画面后由 Codex 实际分析，保存到 SQLite 资料库、分类归档并清理任务临时文件。不能仅因 DOGY 没有某个接口就认定 Agent 无法分析；旧程序仍可检查 Agent 实际可用的转录和画面工具，但必须报告缺口，不能把普通下载当成完整分析。
 
 ## 视频记忆与分类
 
@@ -56,7 +56,7 @@ description: 用本机抖记DOGY解析、下载和分析抖音、小红书、微
 
 ## 首次接入
 
-用户已要求安装 DOGY 时，运行本插件根目录 `scripts/setup.ps1`。脚本先查已记录路径和常见位置；默认未找到程序或版本低于 1.1.0 时，从插件配置的 GitHub Releases 下载并校验正式 EXE。用户明确提供 EXE 路径时传 `-ExePath` 并尊重该位置，不擅自替换。查看真实安装结果的 `video_memory_available` 与 `warning`；`video_memory_available=false` 时说明新视频记忆能力未就绪；更新失败时保留已验证程序，按实际版本报告仍可用的功能。设置成功后提醒用户新建聊天以加载 MCP，再检查 `dogy_doctor` 与真实资料库工具；缺少正式仓库地址或 Release 时报告发布尚未完成，不编造下载地址。
+用户已要求安装 DOGY 时，运行本插件根目录 `scripts/setup.ps1`。脚本先查已记录路径和常见位置；默认未找到程序或版本低于 1.1.1 时，从插件配置的 GitHub Releases 下载并校验正式 EXE。用户明确提供 EXE 路径时传 `-ExePath` 并尊重该位置，不擅自替换。查看真实安装结果的 `video_memory_available` 与 `warning`；`video_memory_available=false` 时说明新视频记忆能力未就绪；更新失败时保留已验证程序，按实际版本报告仍可用的功能；`dense_frames_available=false` 时不能称已启用新版抽帧，1.1.0 仍按旧策略。设置成功后提醒用户新建聊天以加载 MCP，再检查 `dogy_doctor` 与真实资料库工具；缺少正式仓库地址或 Release 时报告发布尚未完成，不编造下载地址。
 
 若客户端当前没有 dogy_* 工具，检查插件是否启用和安装脚本结果，不把 CLI doctor 成功说成 MCP 已加载。
 
