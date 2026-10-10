@@ -3,7 +3,7 @@ param([string]$ExePath = '', [switch]$ForceDownload)
 . (Join-Path $PSScriptRoot 'runtime.ps1')
 $data = Join-Path $env:LOCALAPPDATA 'MediaDownloader\Agent'
 $runtimePath = Join-Path $data 'runtime.json'
-$requiredVersion = [version]'1.1.0'
+$requiredVersion = [version]'1.1.1'
 $warning = ''
 try {
     if ($ExePath) {
@@ -19,7 +19,11 @@ try {
             }
         }
     }
-    $videoMemoryAvailable = [version]$runtime.version -ge $requiredVersion
+    $videoMemoryAvailable = [version]$runtime.version -ge [version]'1.1.0'
+    $denseFramesAvailable = [version]$runtime.version -ge $requiredVersion
+    if (-not $denseFramesAvailable) {
+        $warning += ' Denser frame analysis requires DOGY 1.1.1 or later; the selected program keeps its previous sampling policy.'
+    }
     if (-not $videoMemoryAvailable) {
         $warning += ' DOGY ' + $runtime.version + ' is selected. Download tools remain available; video memory requires DOGY 1.1.0 or later.'
     }
@@ -35,7 +39,7 @@ try {
     Save-DogyRuntime $runtimePath $runtime
     @{ ok = $true; executable = $runtime.executable; version = $runtime.version;
        ready = $runtime.ready; can_merge = $runtime.can_merge;
-       video_memory_available = $videoMemoryAvailable; required_version = $requiredVersion.ToString();
+       video_memory_available = $videoMemoryAvailable; dense_frames_available = $denseFramesAvailable; required_version = $requiredVersion.ToString();
        warning = $warning.Trim() } | ConvertTo-Json -Compress
 } catch {
     [Console]::Error.WriteLine('DOGY setup: ' + $_.Exception.Message)
