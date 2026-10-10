@@ -1,8 +1,8 @@
-帮我安装抖记DOGY Plugin，让我可以在这里下载视频和图集。
+帮我安装抖记DOGY Plugin 1.1.0，让我可以在这里下载视频和图集，分析视频并检索自己的视频笔记。
 
 1. 添加插件目录：执行 `codex plugin marketplace add https://github.com/SuperChiCO1990/DOGY-plugin.git --ref main`
 2. 安装插件：执行 `codex plugin add dogy@dogy`
-3. 在安装后的 dogy 插件根目录运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts/setup.ps1"`。优先使用本机已有 DOGY，若用户已提供程序位置，增加 `-ExePath "实际程序路径"`；未找到时从上述仓库的 GitHub Releases 下载并校验正式 EXE。此插件仅支持 Windows。
-4. 安装成功后提醒我新建任务，以加载本机 MCP；新任务中调用 dogy_doctor 确认就绪，再开始下载。
+3. 在安装后的 dogy 插件根目录运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts/setup.ps1"`。默认使用已验证的本机 DOGY；未找到或低于 1.1.0 时，从上述仓库的 GitHub Releases 下载并校验正式 EXE。若我明确提供程序位置，增加 `-ExePath "实际程序路径"` 并尊重该位置；根据安装结果如实报告功能；旧版更新失败时保留可运行程序，并说明新视频记忆能力尚未就绪。此插件仅支持 Windows。
+4. 安装成功后提醒我新建聊天，以加载本机 MCP；新聊天调用 dogy_doctor，并确认已加载 dogy_analyze_start、dogy_library_search 等资料库工具，再告诉我可以开始使用。旧聊天不能热加载新增工具，必要时重启客户端。
 
-无需 DOGY 账户授权。不要修改其他插件或要求我粘贴 Cookie、密码或令牌。只有真实验证通过后才告诉我可以开始下载；如果还没有正式 Release，明确报告发布尚未完成。
+首次选择“下载并分析”会准备本机转录组件和模型，之后复用。不要把安装成功当成已转录或分析过视频。无需 DOGY 账户授权。不要修改其他插件或要求我粘贴 Cookie、密码或令牌。只有真实验证通过后才告诉我已经就绪；如果还没有正式 Release，明确报告发布尚未完成。
