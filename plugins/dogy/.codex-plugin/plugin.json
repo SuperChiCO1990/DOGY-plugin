@@ -1,12 +1,12 @@
 {
   "name": "dogy",
-  "version": "1.0.3",
-  "description": "使用本机抖记DOGY下载视频与图集，支持Windows。",
+  "version": "1.1.0",
+  "description": "使用本机抖记DOGY下载视频与图集，整理并检索视频笔记，支持Windows。",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "抖记DOGY",
-    "shortDescription": "本机视频和图集下载",
+    "shortDescription": "视频下载、分析与笔记检索",
     "developerName": "SuperChiCO1990",
     "logo": "./assets/logo.png",
     "logoDark": "./assets/logo.png",
