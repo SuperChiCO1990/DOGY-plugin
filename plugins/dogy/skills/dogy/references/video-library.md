@@ -16,7 +16,7 @@
 2. 调用 `dogy_analyze_start(video_id)`，保留 `task_id` 和 `video_id`。正在运行或等待 Agent 分析的持久任务会复用；一次等待结束或消息刷新不重复创建。
 3. 用 `dogy_analyze_status(task_id, wait_seconds=10)` 查询真实状态：`queued`、`installing`、`transcribing`、`frames` 是准备阶段；`ready` 只表示转录与画面材料准备好，不表示 Codex 已理解、笔记已保存。`completed` 才表示本次收尾完成。反馈实际 note/progress，不能把原视频下载百分比当转录进度。
 4. 到 `ready` 后，先用 `dogy_library_get(video_id, offset=0, limit=20)` 读取元信息、转录与已有内容。`segments` 的 `source=transcript` 是原始语音识别，`visual` 是画面观察，`note` 是分析笔记。按下方分页规则读完全部转录，不能只读第一页或只看摘要。结合 status 的 `duration`、`has_audio` 和 get 的 `transcript_complete` 核对实际正文，语音未完整时保留缺口。
-5. 再用 `dogy_analyze_materials(task_id, offset=0, limit=12)` 分页获取 `frames[{path,time}]`，继续到 `next_offset=null`。`total` 是抽帧数，`interval_seconds` 是取样间隔；画面时间点必须使用返回的 `time`，不能用序号乘间隔编造。拿到路径不等于看过画面，必须使用客户端实际图片读取工具查看所有必要画面，记录确实已查看的 `time`。
+5. 再用 `dogy_analyze_materials(task_id, offset=0, limit=12)` 分页获取 `frames[{path,time}]`，继续到 `next_offset=null`。`total` 是保留的抽帧数，`interval_seconds` 是默认候选间隔；1.1.1 的 `frame_sampling` 报告默认 1 秒、最小约 0.5 秒、变化加密策略与候选/保留/重复数量，实际画面间隔可变。连续相同帧保留 `duplicate_count` 与 `last_duplicate_time`，不需要重复读取；这些是重复取样信息，不能推断中间每一瞬间都相同。旧任务仍按返回的原策略读取，不冒充新密度。画面时间点必须使用返回的 `time`，不能用序号乘间隔编造。拿到路径不等于看过画面，必须使用客户端实际图片读取工具查看所有必要画面，记录确实已查看的 `time`。
 6. Codex 将完整读取的语音时间线与对应画面结合分析。长视频分段；教程中的代码、设置或屏幕操作看不清时保留不确定性，不猜测填补。大量画面可用 Agent 工具制作临时联系表辅助阅读，但必须放在已确认归属该分析任务的临时目录中，不写到原视频目录。联系表不能替代查看需要辨识的细节，覆盖记录只写真实已阅读的范围。
 7. 按下方结构生成 JSON 文本，调用 `dogy_library_save(video_id, analysis_json)` 保存摘要、标签、时间线观察、方法卡和覆盖范围。保存保留引擎转录；Agent 只增加 `visual` 或 `note` 片段，不重写、伪造语音原文。以工具成功返回和实际库记录为准，不直接编辑 SQLite，不额外写视频旁的 `.md`、`.jsonl`、音频或字幕。
 8. 保存成功后调用 `dogy_library_archive(video_id, category)`，使用返回的 `path` 更新本地预览与打开入口。分类是一个宽泛一级目录，不建逐视频子目录、不覆盖同名视频。归档失败保留原片并报告，不能假称已分类。
@@ -29,7 +29,7 @@
 
 `dogy_library_get` 的 `segments`、`notes`、`methods` 共用本次 `offset` 和 `limit`，总数分别是 `segment_count`、`note_count`、`method_count`。没有 `next_offset`；从 offset=0 起，按已请求的 limit 推进 offset，直到相关列表的数量读完。完整内容阅读应持续到三项数量都覆盖；某页没有 methods 不代表后续没有转录，不把各列表数量相加当 offset。
 
-`dogy_analyze_materials` 只返回画面，不返回语音正文；按它实际返回的 `next_offset` 继续。两类分页的 limit 均最多 40。查询材料列表可以读取全部画面路径，但 `coverage.reviewed_frame_times` 只列确实由图片工具读过的画面。
+`dogy_analyze_materials` 只返回画面，不返回语音正文；按它实际返回的 `next_offset` 继续。两类分页的 limit 均最多 40。材料增多时分段读取，不能因为页数多就只看第一页，也不必重复分析完全相同的画面；保存 coverage 时记录真实 frame_sampling 策略和观察时间点。查询材料列表可以读取全部画面路径，但 `coverage.reviewed_frame_times` 只列确实由图片工具读过的画面。
 
 ## 保存结构
 
@@ -53,7 +53,7 @@
     "transcript_complete": false,
     "transcript_read_ranges": [[0.0, 32.0]],
     "reviewed_frame_times": [0.0, 10.0, 20.0, 30.0],
-    "sampling_interval_seconds": 5,
+    "sampling_interval_seconds": 1,
     "gaps": ["实际没有看清或没有覆盖的内容"]
   }
 }
