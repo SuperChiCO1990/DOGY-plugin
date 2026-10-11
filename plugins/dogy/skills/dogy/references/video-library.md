@@ -13,10 +13,10 @@
 ## 下载分析
 
 1. 沿用本批已经选择的“下载分析”，下载、查询进度并核实原片成功保存；取得 `library_id`，没有时登记一次，不重复下载。
-2. 调用 `dogy_analyze_start(video_id)`，保留 `task_id` 和 `video_id`。正在运行或等待 Agent 分析的持久任务会复用；一次等待结束或消息刷新不重复创建。
-3. 用 `dogy_analyze_status(task_id, wait_seconds=10)` 查询真实状态：`queued`、`installing`、`transcribing`、`frames` 是准备阶段；`ready` 只表示转录与画面材料准备好，不表示 Codex 已理解、笔记已保存。`completed` 才表示本次收尾完成。反馈实际 note/progress，不能把原视频下载百分比当转录进度。
-4. 到 `ready` 后，先用 `dogy_library_get(video_id, offset=0, limit=20)` 读取元信息、转录与已有内容。`segments` 的 `source=transcript` 是原始语音识别，`visual` 是画面观察，`note` 是分析笔记。按下方分页规则读完全部转录，不能只读第一页或只看摘要。结合 status 的 `duration`、`has_audio` 和 get 的 `transcript_complete` 核对实际正文，语音未完整时保留缺口。
-5. 再用 `dogy_analyze_materials(task_id, offset=0, limit=12)` 分页获取 `frames[{path,time}]`，继续到 `next_offset=null`。`total` 是保留的抽帧数，`interval_seconds` 是默认候选间隔；1.1.1 的 `frame_sampling` 报告默认 1 秒、最小约 0.5 秒、变化加密策略与候选/保留/重复数量，实际画面间隔可变。连续相同帧保留 `duplicate_count` 与 `last_duplicate_time`，不需要重复读取；这些是重复取样信息，不能推断中间每一瞬间都相同。旧任务仍按返回的原策略读取，不冒充新密度。画面时间点必须使用返回的 `time`，不能用序号乘间隔编造。拿到路径不等于看过画面，必须使用客户端实际图片读取工具查看所有必要画面，记录确实已查看的 `time`。
+2. 调用 `dogy_analyze_start(video_id)`，保留任务标识。运行中或 ready 的任务继续复用；若返回 `reused=true` 与 `completed`，读取已有笔记、方法卡及 coverage，直接基于已有证据讲解并说明复用，不重复转录、抽帧、保存、归档或 finish。已有覆盖不足以回答本次问题，或用户明确要求重新分析时，才调用 start(force=true)；原片内容改变会拒绝复用。
+3. 用 `dogy_analyze_status(task_id, wait_seconds=10)` 查询真实状态：`queued`、`installing`、`transcribing`、`frames` 是准备阶段；`ready` 只表示转录与画面材料准备好，不表示 Codex 已理解、笔记已保存。`completed` 才表示本次收尾完成。反馈实际 note/progress，不能把原视频下载百分比当转录进度。 使用长轮询等待；只在阶段改变、显著进展或出错时简短汇报，避免每个百分比都重复说明，不额外调用 doctor/get/materials 探测准备进度。
+4. 到 `ready` 后，先用 `dogy_library_get(video_id, offset=0, limit=200)` 读取元信息、转录与已有内容。`segments` 的 `source=transcript` 是原始语音识别，`visual` 是画面观察，`note` 是分析笔记。按下方分页规则读完全部转录，不能只读第一页或只看摘要。结合 status 的 `duration`、`has_audio` 和 get 的 `transcript_complete` 核对实际正文，语音未完整时保留缺口。
+5. 先用 `dogy_analyze_materials(task_id, view="overview", offset=0, limit=32)` 获取最多 32 张沿真实时间分布的概览画面（包含首尾），用图片工具查看。`total` 是当前选择数，`available_frame_count` 是全部保留帧数；概览只是时间分布取样，不是自动识别关键帧。结合完整转录找演示操作、文字、命令、转折或不清楚的片段，按实际需要用 `view="all", start_seconds=起始整数秒, end_seconds=结束整数秒, limit=40` 获取并查看该范围的密集画面，按 next_offset 翻页。不要为了拿全片路径而遍历所有抽帧页。无音轨、转录失败或视觉细节密集时扩大补看范围；用户要求精读时仍可全片密集阅读。保留原有 1 秒、变化处约 0.5 秒与连续相同帧去重策略；只将确实看过的时间点写入 coverage，不能称逐帧看完。
 6. Codex 将完整读取的语音时间线与对应画面结合分析。长视频分段；教程中的代码、设置或屏幕操作看不清时保留不确定性，不猜测填补。大量画面可用 Agent 工具制作临时联系表辅助阅读，但必须放在已确认归属该分析任务的临时目录中，不写到原视频目录。联系表不能替代查看需要辨识的细节，覆盖记录只写真实已阅读的范围。
 7. 按下方结构生成 JSON 文本，调用 `dogy_library_save(video_id, analysis_json)` 保存摘要、标签、时间线观察、方法卡和覆盖范围。保存保留引擎转录；Agent 只增加 `visual` 或 `note` 片段，不重写、伪造语音原文。以工具成功返回和实际库记录为准，不直接编辑 SQLite，不额外写视频旁的 `.md`、`.jsonl`、音频或字幕。
 8. 保存成功后调用 `dogy_library_archive(video_id, category)`，使用返回的 `path` 更新本地预览与打开入口。分类是一个宽泛一级目录，不建逐视频子目录、不覆盖同名视频。归档失败保留原片并报告，不能假称已分类。
@@ -29,7 +29,7 @@
 
 `dogy_library_get` 的 `segments`、`notes`、`methods` 共用本次 `offset` 和 `limit`，总数分别是 `segment_count`、`note_count`、`method_count`。没有 `next_offset`；从 offset=0 起，按已请求的 limit 推进 offset，直到相关列表的数量读完。完整内容阅读应持续到三项数量都覆盖；某页没有 methods 不代表后续没有转录，不把各列表数量相加当 offset。
 
-`dogy_analyze_materials` 只返回画面，不返回语音正文；按它实际返回的 `next_offset` 继续。两类分页的 limit 均最多 40。材料增多时分段读取，不能因为页数多就只看第一页，也不必重复分析完全相同的画面；保存 coverage 时记录真实 frame_sampling 策略和观察时间点。查询材料列表可以读取全部画面路径，但 `coverage.reviewed_frame_times` 只列确实由图片工具读过的画面。
+`dogy_library_get` 每页最多 200 条；初次阅读用 limit=200，按实际数量读完相关列表，避免小页反复调用。`dogy_analyze_materials` 每页最多 40 帧；概览最多 32 帧，可一页获取。需要补看时，保持相同 view 和时间范围，按 next_offset 翻页；offset 针对当前选择，不是全片下标。coverage 同时记录原抽帧策略、概览模式和实际已看时间点。返回路径不代表已读图片，未看的细节不能作为结论依据。
 
 ## 保存结构
 
