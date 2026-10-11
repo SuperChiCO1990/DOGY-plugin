@@ -42,13 +42,30 @@ function Find-DogyRuntime($previous) {
 
 function Read-DogyRuntime([string]$path) {
     if (Test-Path -LiteralPath $path) {
-        try { return Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json }
-        catch { [Console]::Error.WriteLine('DOGY runtime record invalid: ' + $_.Exception.Message) }
+        try {
+            $parsed = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($parsed -isnot [PSCustomObject] -or $parsed.executable -isnot [string] -or
+                -not [IO.Path]::IsPathRooted($parsed.executable) -or
+                $parsed.version -isnot [string] -or $parsed.version -notmatch '^\d+\.\d+\.\d+$') {
+                throw 'Expected an absolute executable path and a valid runtime version.'
+            }
+            $null = [version]$parsed.version
+            $checkedAt = 0L
+            if ($null -ne $parsed.checked_at -and
+                (-not [long]::TryParse([string]$parsed.checked_at, [ref]$checkedAt) -or $checkedAt -lt 0)) {
+                [Console]::Error.WriteLine('DOGY update timestamp invalid; checking updates again.')
+                $checkedAt = 0L
+            }
+            $record = @{}
+            foreach ($property in $parsed.PSObject.Properties) { $record[$property.Name] = $property.Value }
+            $record['checked_at'] = $checkedAt
+            return $record
+        } catch { [Console]::Error.WriteLine('DOGY runtime record invalid: ' + $_.Exception.Message) }
     }
     return $null
 }
 
-function Save-DogyRuntime([string]$path, $record) {
+function Save-DogyRuntime([string]$path, [hashtable]$record) {
     $previous = Read-DogyRuntime $path
     if (-not $record.ContainsKey('plugin_version') -and $previous.plugin_version) {
         $record['plugin_version'] = $previous.plugin_version
@@ -65,9 +82,9 @@ function Save-DogyRuntime([string]$path, $record) {
 }
 
 function Assert-DogyAsset([string]$url, [string]$prefix) {
-    $uri = [Uri]$url
+    $uri = [Uri]([Uri]::UnescapeDataString($url))
     if ($uri.Scheme -ne 'https' -or $uri.Host -ne 'github.com' -or $uri.UserInfo -or
-        -not $url.StartsWith($prefix, [StringComparison]::Ordinal)) {
+        -not $uri.AbsoluteUri.StartsWith($prefix, [StringComparison]::Ordinal)) {
         throw 'Release asset must belong to the configured HTTPS GitHub release.'
     }
 }

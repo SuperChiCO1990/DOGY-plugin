@@ -13,6 +13,18 @@ $script:downloads = 0
 $script:bytes = [Text.Encoding]::UTF8.GetBytes('verified-release-fixture')
 $script:hash = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($script:bytes)).Replace('-', '').ToLower()
 function Assert($value, [string]$message) { if (-not $value) { throw $message } }
+$prefix = 'https://github.com/SuperChiCO1990/DOGY-plugin/releases/download/v2.0.0/'
+Assert-DogyAsset ($prefix + 'DOGY.exe') $prefix
+foreach ($invalid in @(
+    ($prefix + '../v1.0.0/DOGY.exe'),
+    ($prefix + '%2e%2e/v1.0.0/DOGY.exe'),
+    ($prefix.Replace('https:', 'http:') + 'DOGY.exe'),
+    ($prefix.Replace('github.com', 'github.com.example.org') + 'DOGY.exe'),
+    ($prefix.Replace('github.com', 'user@github.com') + 'DOGY.exe'))) {
+    $rejected = $false
+    try { Assert-DogyAsset $invalid $prefix } catch { $rejected = $true }
+    Assert $rejected ('Release asset escaped the configured HTTPS release: ' + $invalid)
+}
 function Test-Dogy([string]$candidate) {
     if (-not $candidate -or -not (Test-Path -LiteralPath $candidate)) { return $null }
     $version = '2.0.0'
@@ -59,6 +71,27 @@ function Start-Process($FilePath, $WindowStyle, $ArgumentList, $RedirectStandard
     Assert ($WindowStyle -eq 'Hidden') 'Background update must not flash a window.'
     $script:launches++
 }
+$record = Read-DogyRuntime $path
+Assert ($record -is [hashtable]) 'Runtime reads and writes must share the same record type.'
+Save-DogyRuntime $path $record
+Assert ((Read-DogyRuntime $path).plugin_version -eq '1.1.0') 'Runtime records must support read/write round trips.'
+foreach ($timestamp in @('invalid timestamp', -1, 1.5)) {
+    [IO.File]::WriteAllText($path, (@{ executable = $old; version = '1.0.0'; checked_at = $timestamp } | ConvertTo-Json))
+    $repaired = Read-DogyRuntime $path
+    Assert ($repaired.executable -eq $old -and $repaired.checked_at -eq 0) 'Bad timestamps must retain the configured path and trigger a fresh update check.'
+}
+foreach ($invalid in @(
+    @{ executable = $old; version = '9999999999999.0.0' },
+    @{ executable = 'relative.exe'; version = '1.0.0' },
+    @{ executable = $old; version = 42 },
+    'not a runtime object')) {
+    [IO.File]::WriteAllText($path, ($invalid | ConvertTo-Json))
+    Assert ($null -eq (Read-DogyRuntime $path)) 'Invalid runtime records must be rejected at the input boundary.'
+}
+$recovered = Get-DogyStartupRuntime $path
+Assert ($recovered.version -eq '1.0.3') 'Invalid records must not block an independently verified local runtime.'
+$script:launches = 0
+Save-DogyRuntime $path $record
 $selected = Get-DogyStartupRuntime $path
 Assert ($script:launches -eq 0) 'Recent check must not start an unnecessary worker.'
 Save-DogyRuntime $path @{ executable = $old; version = '1.0.0'; checked_at = 0 }
@@ -87,4 +120,4 @@ $same = Update-DogyRuntime $new
 Assert ($same.version -eq '3.0.0') 'Never downgrade a newer local version.'
 Assert ((Read-DogyRuntime $path).version -eq '1.0.3') 'Failed release must not modify current runtime record.'
 Assert (@(Get-ChildItem -LiteralPath $directory -Recurse -File | Where-Object { $_.Name -match '^[a-f0-9]{32}\.exe$' }).Count -eq 0) 'Temporary downloads leaked.'
-Write-Output 'Runtime selection, offline fallback, check interval, hash/doctor rejection, upgrade and no downgrade: PASS'
+Write-Output 'Runtime records, selection, offline fallback, check interval, hash/doctor rejection, upgrade and no downgrade: PASS'
