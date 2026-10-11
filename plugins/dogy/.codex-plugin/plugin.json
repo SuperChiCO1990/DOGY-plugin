@@ -1,6 +1,6 @@
 {
   "name": "dogy",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "使用本机抖记DOGY下载视频与图集，整理并检索视频笔记，支持Windows。",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",

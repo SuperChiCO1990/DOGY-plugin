@@ -63,7 +63,7 @@ description: 用本机抖记DOGY解析、下载和分析抖音、小红书、微
 
 ## 首次接入
 
-用户已要求安装 DOGY 时，运行本插件根目录 `scripts/setup.ps1`。脚本先查已记录路径和常见位置；默认未找到程序或版本低于 1.2.0 时，从插件配置的 GitHub Releases 下载并校验正式 EXE。用户明确提供 EXE 路径时传 `-ExePath` 并尊重该位置，不擅自替换。查看真实安装结果的 `video_memory_available`、`efficient_analysis_available` 与 `warning`；`video_memory_available=false` 时说明新视频记忆能力未就绪；更新失败时保留已验证程序，按实际版本报告仍可用的功能；`dense_frames_available=false` 时不能称已启用新版抽帧，1.1.0 仍按旧策略。`efficient_analysis_available=false` 时不能调用旧程序不支持的 overview、时间范围或 force 参数，说明需升级程序才能采用节省额度流程。设置成功后提醒用户新建聊天以加载 MCP，再检查 `dogy_doctor` 与真实资料库工具；缺少正式仓库地址或 Release 时报告发布尚未完成，不编造下载地址。
+用户已要求安装 DOGY 时，运行本插件根目录 `scripts/setup.ps1`。脚本先查已记录路径和常见位置；默认未找到程序或版本低于 1.2.1 时，从插件配置的 GitHub Releases 下载并校验正式 EXE。用户明确提供 EXE 路径时传 `-ExePath` 并尊重该位置，不擅自替换。查看真实安装结果的 `video_memory_available`、`efficient_analysis_available` 与 `warning`；`video_memory_available=false` 时说明新视频记忆能力未就绪；更新失败时保留已验证程序，按实际版本报告仍可用的功能；`dense_frames_available=false` 时不能称已启用新版抽帧，1.1.0 仍按旧策略。`efficient_analysis_available=false` 时不能调用旧程序不支持的 overview、时间范围或 force 参数，说明需升级程序才能采用节省额度流程。设置成功后提醒用户新建聊天以加载 MCP，再检查 `dogy_doctor` 与真实资料库工具；缺少正式仓库地址或 Release 时报告发布尚未完成，不编造下载地址。
 
 若客户端当前没有 dogy_* 工具，检查插件是否启用和安装脚本结果，不把 CLI doctor 成功说成 MCP 已加载。
 

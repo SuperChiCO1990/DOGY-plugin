@@ -35,7 +35,7 @@ function Update-DogyRuntime($current) {
 """
 
 
-def run_case(base, name, old="1.0.2", release="1.2.0", offline=False,
+def run_case(base, name, old="1.0.2", release="1.2.1", offline=False,
              explicit=False, force=False, expected=None, updates=0):
     root = base / name
     fixture = root / "plugin"
@@ -74,8 +74,8 @@ def run_case(base, name, old="1.0.2", release="1.2.0", offline=False,
         assert report["video_memory_available"] == available, (name, report)
         assert report["dense_frames_available"] == (tuple(map(int, expected.split("."))) >= (1, 1, 1)), (name, report)
         assert report["efficient_analysis_available"] == (tuple(map(int, expected.split("."))) >= (1, 2, 0)), (name, report)
-        assert report["required_version"] == "1.2.0", (name, report)
-        assert record["version"] == expected and record["plugin_version"] == "1.2.0", name
+        assert report["required_version"] == "1.2.1", (name, report)
+        assert record["version"] == expected and record["plugin_version"] == "1.2.1", name
         if not available:
             assert "requires DOGY 1.1.0" in report["warning"] and result.stderr, name
         if offline:
@@ -91,18 +91,20 @@ def run_case(base, name, old="1.0.2", release="1.2.0", offline=False,
 def main():
     with tempfile.TemporaryDirectory(prefix="dogy-setup-test-") as temporary:
         base = Path(temporary)
-        run_case(base, "old-default-upgrades", expected="1.2.0", updates=1)
-        run_case(base, "previous-analysis-upgrades", old="1.1.0", expected="1.2.0", updates=1)
+        run_case(base, "old-default-upgrades", expected="1.2.1", updates=1)
+        run_case(base, "previous-analysis-upgrades", old="1.1.0", expected="1.2.1", updates=1)
+        run_case(base, "previous-patch-upgrades", old="1.2.0", expected="1.2.1", updates=1)
+        run_case(base, "explicit-previous-patch-kept", old="1.2.0", explicit=True, expected="1.2.0")
         run_case(base, "explicit-previous-analysis-kept", old="1.1.0", explicit=True, expected="1.1.0")
-        run_case(base, "current-default-kept", old="1.2.0", expected="1.2.0")
+        run_case(base, "current-default-kept", old="1.2.1", expected="1.2.1")
         run_case(base, "newer-default-kept", old="1.3.0", expected="1.3.0")
         run_case(base, "offline-old-kept", offline=True, expected="1.0.2", updates=1)
-        run_case(base, "offline-current-kept", old="1.2.0", offline=True, force=True,
-                 expected="1.2.0", updates=1)
+        run_case(base, "offline-current-kept", old="1.2.1", offline=True, force=True,
+                 expected="1.2.1", updates=1)
         run_case(base, "explicit-old-kept", explicit=True, expected="1.0.2")
         run_case(base, "explicit-invalid-fails", old="", explicit=True)
         run_case(base, "explicit-force-kept", explicit=True, force=True, expected="1.0.2")
-        run_case(base, "missing-default-installs", old="", expected="1.2.0", updates=1)
+        run_case(base, "missing-default-installs", old="", expected="1.2.1", updates=1)
         run_case(base, "missing-offline-fails", old="", offline=True, updates=1)
         run_case(base, "old-latest-limits", release="1.0.3", expected="1.0.3", updates=1)
         run_case(base, "force-newer-no-downgrade", old="1.3.0", force=True,
