@@ -142,6 +142,11 @@ function Get-DogyStartupRuntime([string]$path) {
     $previous = Read-DogyRuntime $path
     $runtime = Find-DogyRuntime $previous
     if (-not $runtime) { throw 'DOGY not ready. Run the plugin setup again.' }
+    if (-not $previous.file_key) {
+        # 旧记录没有文件指纹：补写一次，之后只要程序没被换过就不必再跑 doctor。
+        $runtime['checked_at'] = [long]$previous.checked_at
+        Save-DogyRuntime $path $runtime
+    }
     $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
     if ($now - [long]$previous.checked_at -ge 21600) {
         try {
