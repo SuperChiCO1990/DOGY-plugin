@@ -11,19 +11,36 @@ function Get-DogyHash([string]$path) {
     finally { $stream.Dispose(); $sha.Dispose() }
 }
 
+function Get-DogyFileKey([string]$path) {
+    try {
+        $item = Get-Item -LiteralPath $path -ErrorAction Stop
+        return '{0}|{1}' -f $item.Length, $item.LastWriteTimeUtc.Ticks
+    } catch { return '' }
+}
+
 function Test-Dogy([string]$candidate) {
     if (-not $candidate -or -not (Test-Path -LiteralPath $candidate -PathType Leaf)) { return $null }
     try {
         $doctor = [DogyBridge]::Doctor($candidate) | ConvertFrom-Json
         if ($doctor.ok -and $doctor.app -eq '抖记DOGY' -and $doctor.version -match '^\d+\.\d+\.\d+$') {
-            return @{ executable = (Resolve-Path -LiteralPath $candidate).Path; version = $doctor.version;
-                      ready = $doctor.ready; can_merge = $doctor.engines.can_merge }
+            $resolved = (Resolve-Path -LiteralPath $candidate).Path
+            return @{ executable = $resolved; version = $doctor.version;
+                      ready = $doctor.ready; can_merge = $doctor.engines.can_merge;
+                      file_key = (Get-DogyFileKey $resolved) }
         }
     } catch { [Console]::Error.WriteLine('DOGY candidate rejected: ' + $_.Exception.Message) }
     return $null
 }
 
+function Test-DogyUnchanged($previous) {
+    # doctor 是一次完整启动，单文件程序每次启动都要重新解包约 100 MB。
+    # 上次验证过的程序一个字节没动就别再跑 —— 只有文件变了才需要重新验证。
+    if (-not $previous -or -not $previous.executable -or -not $previous.file_key) { return $false }
+    return (Get-DogyFileKey ([string]$previous.executable)) -eq [string]$previous.file_key
+}
+
 function Find-DogyRuntime($previous) {
+    if (Test-DogyUnchanged $previous) { return $previous }
     $candidates = @([string]$previous.executable,
         (Join-Path $env:LOCALAPPDATA 'MediaDownloader\DOGY\DOGY.exe'),
         (Join-Path $env:USERPROFILE 'Downloads\抖记DOGY.exe'),
