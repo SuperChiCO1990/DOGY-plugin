@@ -34,6 +34,21 @@ codex plugin add dogy@dogy --json
 
 运行时在新 MCP 连接时选择已验证的较新 DOGY，并最多每 6 小时后台检查正式 Release。新版校验 SHA256、大小、版本和运行环境后供下一次连接使用；不降级或替换正在下载的程序。下载任务属于本次 MCP 连接；本机资料库与分析任务可以跨聊天检索或恢复。
 
+本次更新仍为 **1.2.1**，已安装同版本程序不会自动提示更新。需要新版 YouTube 设置教程的用户，请重新下载 [v1.2.1 的 DOGY.exe](https://github.com/SuperChiCO1990/DOGY-plugin/releases/tag/v1.2.1)。
+
+## YouTube 登录验证
+
+YouTube 要求登录验证时，可以在桌面版的“高级选项”展开“首次设置教程（以 Chrome 为例）”：
+
+1. 在自己的 Chrome 中打开 YouTube 视频页面，并登录 YouTube。
+2. 安装 [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)。
+3. 回到 YouTube 视频页面，点击扩展图标，确认顶部显示 `youtube.com`；格式选 **Netscape**，点击 **Export**，保存文件。不要选择 Export All Cookies。
+4. 回到 DOGY，点击“选择文件”选中导出的文件，再重新解析。
+
+桌面版只记住文件路径，重启无需重填；文件移动时重新选择，登录会话失效时重新导出，清空路径即可停用。Cookie 文件只在自己的电脑使用，不要发送文件内容或上传。登录验证还可能受网络、账号和视频限制影响，不保证所有视频都能下载。
+
+通过 Agent / MCP 使用时，只需提供本机 Cookie 文件的完整路径，支持的工具使用 `cookie_file`；桌面版记住的路径不会自动带入 MCP。也可以明确选择已登录的本机浏览器，让支持的工具使用 `cookie_browser`。默认不读取浏览器；Chrome / Edge 的系统加密保护可能阻止读取，此时使用本机 Cookie 文件或 Firefox。旧聊天未加载新参数时，重新加载 MCP 或新建聊天后再用。
+
 ## 本地预览
 
 支持本机媒体预览的 Codex 桌面聊天会嵌入原视频或图片，并提供真实本地文件或文件夹的打开入口。两种下载模式均不再附加视频或图片的额外网络下载链接，也不自动建立手机分享连接。客户端不支持播放时提供本地文件入口。
@@ -46,6 +61,8 @@ codex plugin add dogy@dogy --json
 
 ## 1.2.1 更新
 
+- YouTube 登录验证支持明确选择本机浏览器，或使用本机 Cookie 文件。
+- 桌面版新增 Cookie 文件选择、路径记忆和 Chrome 首次设置教程。
 - 改善下载暂停、恢复与异常处理，允许恢复失败后重试。
 - 视频检索保留同一视频的多个匹配时间点，避免遗漏相关证据。
 - 分析任务心跳延迟时保留仍在运行的任务，完善临时材料清理。
