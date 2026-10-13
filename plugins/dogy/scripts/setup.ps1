@@ -20,6 +20,9 @@ try {
             }
         }
     }
+    if (-not $runtime.shared_mcp) {
+        throw 'This plugin requires the DOGY shared-backend program. Update DOGY, then run setup again; the previous connection is preserved.'
+    }
     $videoMemoryAvailable = [version]$runtime.version -ge [version]'1.1.0'
     $denseFramesAvailable = [version]$runtime.version -ge [version]'1.1.1'
     $efficientAnalysisAvailable = [version]$runtime.version -ge [version]'1.2.0'

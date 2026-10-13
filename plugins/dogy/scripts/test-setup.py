@@ -11,7 +11,7 @@ SHELL = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powers
 MOCK_RUNTIME = r"""
 . '__RUNTIME__'
 function New-TestRuntime([string]$path, [string]$version) {
-    return @{ executable = $path; version = $version; ready = $true; can_merge = $true }
+    return @{ executable = $path; version = $version; ready = $true; can_merge = $true; shared_mcp = ($env:DOGY_TEST_SHARED -ne '0') }
 }
 function Test-Dogy([string]$candidate) {
     if ($candidate -eq $env:DOGY_TEST_OLD -and $env:DOGY_TEST_OLD_VERSION) {
@@ -36,7 +36,7 @@ function Update-DogyRuntime($current) {
 
 
 def run_case(base, name, old="1.0.2", release="1.2.1", offline=False,
-             explicit=False, force=False, expected=None, updates=0):
+             explicit=False, force=False, expected=None, updates=0, shared=True):
     root = base / name
     fixture = root / "plugin"
     shutil.copytree(PLUGIN, fixture)
@@ -51,7 +51,7 @@ def run_case(base, name, old="1.0.2", release="1.2.1", offline=False,
                        USERPROFILE=str(root / "profile"), DOGY_TEST_OLD=str(previous),
                        DOGY_TEST_NEW=str(root / "new.exe"), DOGY_TEST_CALLS=str(calls),
                        DOGY_TEST_OLD_VERSION=old, DOGY_TEST_RELEASE=release,
-                       DOGY_TEST_OFFLINE="1" if offline else "0")
+                       DOGY_TEST_OFFLINE="1" if offline else "0", DOGY_TEST_SHARED="1" if shared else "0")
     command = [str(SHELL), "-NoProfile", "-ExecutionPolicy", "Bypass",
                "-File", str(scripts / "setup.ps1")]
     if explicit:
@@ -91,6 +91,7 @@ def run_case(base, name, old="1.0.2", release="1.2.1", offline=False,
 def main():
     with tempfile.TemporaryDirectory(prefix="dogy-setup-test-") as temporary:
         base = Path(temporary)
+        run_case(base, "missing-shared-backend-rejected", old="1.2.1", shared=False)
         run_case(base, "old-default-upgrades", expected="1.2.1", updates=1)
         run_case(base, "previous-analysis-upgrades", old="1.1.0", expected="1.2.1", updates=1)
         run_case(base, "previous-patch-upgrades", old="1.2.0", expected="1.2.1", updates=1)

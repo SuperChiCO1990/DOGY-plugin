@@ -26,6 +26,7 @@ function Test-Dogy([string]$candidate) {
             $resolved = (Resolve-Path -LiteralPath $candidate).Path
             return @{ executable = $resolved; version = $doctor.version;
                       ready = $doctor.ready; can_merge = $doctor.engines.can_merge;
+                      shared_mcp = [bool]$doctor.capabilities.shared_mcp;
                       file_key = (Get-DogyFileKey $resolved) }
         }
     } catch { [Console]::Error.WriteLine('DOGY candidate rejected: ' + $_.Exception.Message) }
