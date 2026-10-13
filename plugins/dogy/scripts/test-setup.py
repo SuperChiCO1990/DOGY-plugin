@@ -82,7 +82,7 @@ def run_case(base, name, old="1.0.2", release="1.2.2", offline=False,
             assert "update failed" in report["warning"], (name, report)
         if explicit or (offline and old):
             assert Path(record["executable"]) == previous, (name, record)
-        for filename in ("bridge.cs", "mcp.ps1", "runtime.ps1", "refresh.ps1",
+        for filename in ("bridge.cs", "catalog.json", "mcp.ps1", "runtime.ps1", "refresh.ps1",
                          "release-source.json"):
             assert (config.parent / filename).is_file(), (name, filename)
     print(f"{name}: PASS")

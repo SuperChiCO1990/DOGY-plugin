@@ -81,25 +81,79 @@ public static class DogyBridge {
             } finally { if (acquired) mutex.ReleaseMutex(); }
         }
     }
+    static int Relay(System.IO.Pipes.NamedPipeClientStream pipe, StreamReader reader,
+                     StreamWriter writer, string first) {
+        Send(pipe, Encoding.UTF8.GetBytes(first));
+        var input = Task.Run(delegate {
+            try {
+                string line;
+                while ((line = reader.ReadLine()) != null) {
+                    if (line.Trim().Length != 0) Send(pipe, Encoding.UTF8.GetBytes(line));
+                }
+            } finally { pipe.Dispose(); }
+        });
+        try { while (true) writer.WriteLine(Encoding.UTF8.GetString(Receive(pipe))); }
+        catch (IOException) { }
+        catch (ObjectDisposedException) { }
+        if (input.IsFaulted) throw input.Exception;
+        return 0;
+    }
     public static int Run(string executable) {
-        using (var pipe = Open(executable)) {
-            var input = Task.Run(delegate {
-                try {
-                    using (var reader = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false))) {
-                        string line;
-                        while ((line = reader.ReadLine()) != null) {
-                            if (line.Trim().Length != 0) Send(pipe, Encoding.UTF8.GetBytes(line));
-                        }
-                    }
-                } finally { pipe.Dispose(); }
-            });
-            using (var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false))) {
-                writer.AutoFlush = true;
-                try { while (true) writer.WriteLine(Encoding.UTF8.GetString(Receive(pipe))); }
-                catch (IOException) { }
-                catch (ObjectDisposedException) { }
+        using (var reader = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false)))
+        using (var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false))) {
+            writer.AutoFlush = true;
+            string first = reader.ReadLine();
+            if (first == null) return 0;
+            using (var pipe = Open(executable)) return Relay(pipe, reader, writer, first);
+        }
+    }
+    public static int RunLazy(Func<string> resolve, string catalogPath) {
+        var json = new System.Web.Script.Serialization.JavaScriptSerializer { MaxJsonLength = MaxMessage };
+        var catalog = json.Deserialize<System.Collections.Generic.Dictionary<string, object>>(File.ReadAllText(catalogPath));
+        using (var reader = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false)))
+        using (var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false))) {
+            writer.AutoFlush = true;
+            string line;
+            while ((line = reader.ReadLine()) != null) {
+                if (line.Trim().Length == 0) continue;
+                System.Collections.Generic.Dictionary<string, object> message;
+                object id = null, methodValue;
+                try { message = json.Deserialize<System.Collections.Generic.Dictionary<string, object>>(line); }
+                catch (ArgumentException) {
+                    writer.WriteLine(json.Serialize(new { jsonrpc = "2.0", id = id,
+                        error = new { code = -32700, message = "Parse error" } }));
+                    continue;
+                }
+                if (message == null || !message.TryGetValue("method", out methodValue) || !(methodValue is string)) {
+                    if (message != null) message.TryGetValue("id", out id);
+                    writer.WriteLine(json.Serialize(new { jsonrpc = "2.0", id = id,
+                        error = new { code = -32600, message = "Invalid Request" } }));
+                    continue;
+                }
+                if (!message.TryGetValue("id", out id)) continue;
+                string method = (string)methodValue;
+                if (method == "tools/call") {
+                    using (var pipe = Open(resolve())) return Relay(pipe, reader, writer, line);
+                }
+                object result;
+                if (method == "initialize") {
+                    var initial = new System.Collections.Generic.Dictionary<string, object>(
+                        (System.Collections.Generic.Dictionary<string, object>)catalog[method]);
+                    object parameters, protocol;
+                    if (message.TryGetValue("params", out parameters) &&
+                        parameters is System.Collections.Generic.Dictionary<string, object> &&
+                        ((System.Collections.Generic.Dictionary<string, object>)parameters).TryGetValue("protocolVersion", out protocol) &&
+                        protocol is string && ((string)protocol).Length != 0) initial["protocolVersion"] = protocol;
+                    result = initial;
+                } else if (method == "ping") result = new object();
+                else if (method == "tools/list") result = catalog[method];
+                else {
+                    writer.WriteLine(json.Serialize(new { jsonrpc = "2.0", id = id,
+                        error = new { code = -32601, message = "Method not found: " + method } }));
+                    continue;
+                }
+                writer.WriteLine(json.Serialize(new { jsonrpc = "2.0", id = id, result = result }));
             }
-            if (input.IsFaulted) throw input.Exception;
             return 0;
         }
     }

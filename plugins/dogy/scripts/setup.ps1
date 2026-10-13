@@ -37,7 +37,7 @@ try {
     }
     if ($warning) { [Console]::Error.WriteLine('DOGY setup: ' + $warning.Trim()) }
     [IO.Directory]::CreateDirectory($data) | Out-Null
-    foreach ($name in @('bridge.cs', 'mcp.ps1', 'runtime.ps1', 'refresh.ps1')) {
+    foreach ($name in @('bridge.cs', 'catalog.json', 'mcp.ps1', 'runtime.ps1', 'refresh.ps1')) {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $data $name) -Force
     }
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot '..\release-source.json') -Destination (Join-Path $data 'release-source.json') -Force

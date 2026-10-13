@@ -2,7 +2,7 @@
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-if (-not ('DogyBridge' -as [type])) { Add-Type -Path (Join-Path $PSScriptRoot 'bridge.cs') }
+if (-not ('DogyBridge' -as [type])) { Add-Type -Path (Join-Path $PSScriptRoot 'bridge.cs') -ReferencedAssemblies 'System.dll', 'System.Core.dll', 'System.Web.Extensions.dll' }
 
 function Get-DogyHash([string]$path) {
     $stream = [IO.File]::OpenRead($path)
