@@ -6,7 +6,8 @@ $runtimePath = Join-Path $data 'runtime.json'
 $warning = ''
 try {
     $plugin = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\.codex-plugin\plugin.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    $requiredVersion = [version]$plugin.version
+    $source = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\release-source.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    $requiredVersion = [version]$source.minimum_runtime_version
     if ($ExePath) {
         $runtime = Test-Dogy (Resolve-Path -LiteralPath $ExePath).Path
         if (-not $runtime) { throw 'The supplied EXE did not pass the DOGY doctor check.' }

@@ -75,7 +75,7 @@ def run_case(base, name, old="1.0.2", release="1.2.2", offline=False,
         assert report["dense_frames_available"] == (tuple(map(int, expected.split("."))) >= (1, 1, 1)), (name, report)
         assert report["efficient_analysis_available"] == (tuple(map(int, expected.split("."))) >= (1, 2, 0)), (name, report)
         assert report["required_version"] == "1.2.2", (name, report)
-        assert record["version"] == expected and record["plugin_version"] == "1.2.2", name
+        assert record["version"] == expected and record["plugin_version"] == json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())["version"], name
         if not available:
             assert "requires DOGY 1.1.0" in report["warning"] and result.stderr, name
         if offline:
