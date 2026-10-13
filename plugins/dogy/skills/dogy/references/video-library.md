@@ -12,7 +12,7 @@
 
 ## 下载分析
 
-1. 沿用本批已经选择的“下载分析”，下载、查询进度并核实原片成功保存；取得 `library_id`，没有时登记一次，不重复下载。
+1. 按本批默认下载分析或用户明确要求，下载、查询进度并核实原片成功保存；取得 `library_id`，没有时登记一次，不重复下载。
 2. 调用 `dogy_analyze_start(video_id)`，保留任务标识。运行中或 ready 的任务继续复用；若返回 `reused=true` 与 `completed`，读取已有笔记、方法卡及 coverage，直接基于已有证据讲解并说明复用，不重复转录、抽帧、保存、归档或 finish。已有覆盖不足以回答本次问题，或用户明确要求重新分析时，才调用 start(force=true)；原片内容改变会拒绝复用。
 3. 用 `dogy_analyze_status(task_id, wait_seconds=10)` 查询真实状态：`queued`、`installing`、`transcribing`、`frames` 是准备阶段；`ready` 只表示转录与画面材料准备好，不表示 Codex 已理解、笔记已保存。`completed` 才表示本次收尾完成。反馈实际 note/progress，不能把原视频下载百分比当转录进度。 使用长轮询等待；只在阶段改变、显著进展或出错时简短汇报，避免每个百分比都重复说明，不额外调用 doctor/get/materials 探测准备进度。
 4. 到 `ready` 后，先用 `dogy_library_get(video_id, offset=0, limit=200)` 读取元信息、转录与已有内容。`segments` 的 `source=transcript` 是原始语音识别，`visual` 是画面观察，`note` 是分析笔记。按下方分页规则读完全部转录，不能只读第一页或只看摘要。结合 status 的 `duration`、`has_audio` 和 get 的 `transcript_complete` 核对实际正文，语音未完整时保留缺口。
