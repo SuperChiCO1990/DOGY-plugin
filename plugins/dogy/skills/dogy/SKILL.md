@@ -1,4 +1,4 @@
----
+﻿---
 name: dogy
 description: 用本机抖记DOGY解析、下载和分析抖音、小红书、微信视频号、YouTube、TikTok、B站的视频与图集，检索已保存的视频笔记与方法卡；也用于安装后检查本机DOGY接入。
 ---
@@ -56,6 +56,7 @@ DOGY 1.1.1 默认每 1 秒准备画面，明显画面变化处加密至约 0.5 �
 ## 使用前更新
 
 每批新视频链接或用户要求更新时，在客户端支持 Codex CLI 且用户未要求保持旧版或禁止更新的情况下，执行一次 `codex plugin marketplace upgrade dogy --json`。这只刷新 DOGY 目录，不升级其他插件。
+若失败明确显示无法解析 `github.com`、DNS 或网络超时，先区分运行环境网络限制与系统网络故障：浏览器能打开 GitHub 不代表沙箱命令能联网。客户端支持权限审批时，只为失败的 DOGY marketplace 命令申请一次网络可用的受限执行权限，并原样重试该命令；不得改系统 DNS、hosts、代理或全局沙箱设置。重试仍失败或无法申请时，保留已加载插件继续任务，并准确说明本次没有更新，建议之后从客户端插件管理刷新；不得谎称已获取最新指令。
 成功后执行 `codex plugin add dogy@dogy --json`，确保安装缓存使用刷新后的插件。刷新前读取已安装 plugin.json 的版本，成功后读取命令实际结果和已安装的 plugin.json；无论版本号是否变化，都重新读取实际安装目录的 SKILL.md 并按新指令继续。不要仅凭命令退出码声称新 MCP 已在当前任务加载；工具配置变更需新任务（必要时重启客户端）生效。
 检查 `%LOCALAPPDATA%\MediaDownloader\Agent\runtime.json` 的 `plugin_version` 是否等于当前已安装 plugin.json 的 version，并确认 runtime.ps1、refresh.ps1 存在。不一致或缺失时运行当前已安装插件的 `scripts/setup.ps1` 一次，迁移本机启动器。用户指定程序位置时优先传 `-ExePath`。迁移失败报告实际原因，保留现有就绪工具；不要修改其他插件。
 权限错误与网络错误分开处理：若实际错误为 `failed to canonicalize CODEX_HOME`、`Access denied`、`Permission denied` 或系统错误 5，且客户端提供权限审批机制，按客户端规则为失败的那一条 DOGY 命令申请访问插件数据目录的权限；获批后原命令只重试一次。`marketplace upgrade` 成功后才执行 `plugin add`；后者若权限失败，也按相同规则重试一次。安装脚本或运行时检查访问本机应用数据目录遇到同类错误时也遵循该规则，获批后重新读取真实用户环境，不使用沙箱重定向目录替代。用户允许更新不等于系统已授予权限；不得改磁盘 ACL、关闭隔离、改其他插件或用别的工具绕过拒绝。
