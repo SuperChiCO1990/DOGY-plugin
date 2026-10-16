@@ -143,8 +143,9 @@ function Get-DogyStartupRuntime([string]$path) {
     $previous = Read-DogyRuntime $path
     $runtime = Find-DogyRuntime $previous
     if (-not $runtime) { throw 'DOGY not ready. Run the plugin setup again.' }
-    if (-not $previous.file_key) {
-        # 旧记录没有文件指纹：补写一次，之后只要程序没被换过就不必再跑 doctor。
+    if (-not $previous.file_key -or $runtime.executable -ne $previous.executable -or
+        $runtime.file_key -ne $previous.file_key) {
+        # 新路径或文件已经过 doctor：立即保存，后续启动复用验证结果。
         $runtime['checked_at'] = [long]$previous.checked_at
         Save-DogyRuntime $path $runtime
     }

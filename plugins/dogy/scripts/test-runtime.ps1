@@ -10,6 +10,7 @@ $script:badHash = $false
 $script:badDoctor = $false
 $script:requests = 0
 $script:downloads = 0
+$script:doctorCalls = 0
 $script:bytes = [Text.Encoding]::UTF8.GetBytes('verified-release-fixture')
 $script:hash = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($script:bytes)).Replace('-', '').ToLower()
 function Assert($value, [string]$message) { if (-not $value) { throw $message } }
@@ -27,11 +28,13 @@ foreach ($invalid in @(
 }
 function Test-Dogy([string]$candidate) {
     if (-not $candidate -or -not (Test-Path -LiteralPath $candidate)) { return $null }
+    $script:doctorCalls++
     $version = '2.0.0'
     if ($candidate.EndsWith('old.exe')) { $version = '1.0.0' }
     elseif ($candidate.EndsWith('DOGY\DOGY.exe')) { $version = '1.0.3' }
     elseif ($script:badDoctor) { return $null }
-    return @{ executable = $candidate; version = $version; ready = $true; can_merge = $true }
+    return @{ executable = $candidate; version = $version; ready = $true; can_merge = $true;
+              file_key = (Get-DogyFileKey $candidate) }
 }
 function Invoke-RestMethod($Uri, $Headers, $TimeoutSec) {
     $script:requests++
@@ -120,4 +123,22 @@ $same = Update-DogyRuntime $new
 Assert ($same.version -eq '3.0.0') 'Never downgrade a newer local version.'
 Assert ((Read-DogyRuntime $path).version -eq '1.0.3') 'Failed release must not modify current runtime record.'
 Assert (@(Get-ChildItem -LiteralPath $directory -Recurse -File | Where-Object { $_.Name -match '^[a-f0-9]{32}\.exe$' }).Count -eq 0) 'Temporary downloads leaked.'
+$recent = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - 3600
+Save-DogyRuntime $path @{ executable = $local; version = '1.0.2'; file_key = (Get-DogyFileKey $local);
+                         checked_at = $recent; plugin_version = '1.1.0' }
+[IO.File]::WriteAllBytes($local, [Text.Encoding]::UTF8.GetBytes('replaced-verified-runtime-fixture'))
+$selected = Get-DogyStartupRuntime $path
+$replaced = Read-DogyRuntime $path
+Assert ($replaced.file_key -eq (Get-DogyFileKey $local) -and $replaced.version -eq '1.0.3') 'Changed runtime must persist its verified fingerprint and version.'
+Assert ($replaced.checked_at -eq $recent -and $replaced.plugin_version -eq '1.1.0') 'Runtime replacement must preserve the update interval and plugin version.'
+$calls = $script:doctorCalls
+$selected = Get-DogyStartupRuntime $path
+Assert ($script:doctorCalls -eq $calls) 'A second startup must reuse the newly verified fingerprint.'
+Save-DogyRuntime $path @{ executable = (Join-Path $TestRoot 'removed.exe'); version = '1.0.0';
+                         file_key = (Get-DogyFileKey $local); checked_at = $recent; plugin_version = '1.1.0' }
+$selected = Get-DogyStartupRuntime $path
+Assert ((Read-DogyRuntime $path).executable -eq $local) 'A newly selected runtime path must replace the unavailable recorded path.'
+$calls = $script:doctorCalls
+$selected = Get-DogyStartupRuntime $path
+Assert ($script:doctorCalls -eq $calls) 'A second startup must reuse the newly selected runtime path.'
 Write-Output 'Runtime records, selection, offline fallback, check interval, hash/doctor rejection, upgrade and no downgrade: PASS'
