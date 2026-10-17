@@ -10,7 +10,7 @@
 
 ## 首次接入
 
-用户已要求安装 DOGY 时，运行本插件根目录 `scripts/setup.ps1`。脚本先查已记录路径和常见位置；默认未找到程序或版本低于 1.2.4 时，从插件配置的 GitHub Releases 下载并校验正式 EXE。用户明确提供 EXE 路径时传 `-ExePath` 并尊重该位置，不擅自替换。新版接入要求 `shared_mcp=true`；安装脚本拒绝不支持共享后台的程序并保留原入口，此时先更新 DOGY，再重新安装。查看真实安装结果的 `video_memory_available`、`efficient_analysis_available` 与 `warning`；`video_memory_available=false` 时说明新视频记忆能力未就绪；更新失败时保留已验证程序，按实际版本报告仍可用的功能；`dense_frames_available=false` 时不能称已启用新版抽帧，1.1.0 仍按旧策略。`efficient_analysis_available=false` 时不能调用旧程序不支持的 overview、时间范围或 force 参数，说明需升级程序才能采用节省额度流程。设置成功后提醒用户新建聊天以加载 MCP，再检查 `dogy_doctor` 与真实资料库工具；缺少正式仓库地址或 Release 时报告发布尚未完成，不编造下载地址。
+用户已要求安装 DOGY 时，运行本插件根目录 `scripts/setup.ps1`。脚本先查已记录路径和常见位置；默认未找到程序或版本低于 1.2.5 时，从插件配置的 GitHub Releases 下载并校验正式 EXE。用户明确提供 EXE 路径时传 `-ExePath` 并尊重该位置，不擅自替换。新版接入要求 `shared_mcp=true`；安装脚本拒绝不支持共享后台的程序并保留原入口，此时先更新 DOGY，再重新安装。查看真实安装结果的 `video_memory_available`、`efficient_analysis_available` 与 `warning`；`video_memory_available=false` 时说明新视频记忆能力未就绪；更新失败时保留已验证程序，按实际版本报告仍可用的功能；`dense_frames_available=false` 时不能称已启用新版抽帧，1.1.0 仍按旧策略。`efficient_analysis_available=false` 时不能调用旧程序不支持的 overview、时间范围或 force 参数，说明需升级程序才能采用节省额度流程。设置成功后提醒用户新建聊天以加载 MCP，再检查 `dogy_doctor` 与真实资料库工具；缺少正式仓库地址或 Release 时报告发布尚未完成，不编造下载地址。
 
 若客户端当前没有 dogy_* 工具，检查插件是否启用和安装脚本结果，不把 CLI doctor 成功说成 MCP 已加载。
 
@@ -28,6 +28,10 @@
 ## YouTube 登录验证
 
 YouTube 登录受限时，工具实际支持 `cookie_browser` 且用户明确选择本机浏览器后，把选择传给解析与下载；默认不读取浏览器，不猜测浏览器或轮询账户。浏览器会话只在本机供引擎使用，不展示或导出 Cookie；读取失败说明浏览器锁定或系统加密限制，不关闭安全保护。用户已有 cookies.txt 时沿用 `cookie_file`，不索要文件正文。旧工具没有该参数时不发送未知字段，说明需加载支持此能力的程序与新聊天。Agent 下载无需打开桌面，也不会同步到桌面进度条。
+
+## 保存位置切换
+
+默认保存目录成功切换时，已存在资料库通过 SQLite 备份和内容校验迁到新目录下的“视频资料库”，旧笔记与记录继续沿用，旧库保留作恢复副本。已有原视频保持登记路径，不额外搬动旧视频。有运行中或待分析任务时稍后再切换；目标资料库目录非空不覆盖，迁移或校验失败保持原设置与原库。以程序返回结果为准，不自行搬库、编辑 SQLite 或删除旧库。
 
 ## 程序运行时更新
 
