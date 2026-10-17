@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 
 PLUGIN = Path(__file__).resolve().parents[1]
+MINIMUM_RUNTIME_VERSION = json.loads((PLUGIN / "release-source.json").read_text(encoding="utf-8"))["minimum_runtime_version"]
 SHELL = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
 MOCK_RUNTIME = r"""
 . '__RUNTIME__'
@@ -35,7 +36,7 @@ function Update-DogyRuntime($current) {
 """
 
 
-def run_case(base, name, old="1.0.2", release="1.2.2", offline=False,
+def run_case(base, name, old="1.0.2", release=MINIMUM_RUNTIME_VERSION, offline=False,
              explicit=False, force=False, expected=None, updates=0, shared=True):
     root = base / name
     fixture = root / "plugin"
@@ -74,7 +75,7 @@ def run_case(base, name, old="1.0.2", release="1.2.2", offline=False,
         assert report["video_memory_available"] == available, (name, report)
         assert report["dense_frames_available"] == (tuple(map(int, expected.split("."))) >= (1, 1, 1)), (name, report)
         assert report["efficient_analysis_available"] == (tuple(map(int, expected.split("."))) >= (1, 2, 0)), (name, report)
-        assert report["required_version"] == "1.2.2", (name, report)
+        assert report["required_version"] == MINIMUM_RUNTIME_VERSION, (name, report)
         assert record["version"] == expected and record["plugin_version"] == json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())["version"], name
         if not available:
             assert "requires DOGY 1.1.0" in report["warning"] and result.stderr, name
@@ -91,21 +92,21 @@ def run_case(base, name, old="1.0.2", release="1.2.2", offline=False,
 def main():
     with tempfile.TemporaryDirectory(prefix="dogy-setup-test-") as temporary:
         base = Path(temporary)
-        run_case(base, "missing-shared-backend-rejected", old="1.2.2", shared=False)
-        run_case(base, "old-default-upgrades", expected="1.2.2", updates=1)
-        run_case(base, "previous-analysis-upgrades", old="1.1.0", expected="1.2.2", updates=1)
-        run_case(base, "previous-patch-upgrades", old="1.2.0", expected="1.2.2", updates=1)
+        run_case(base, "missing-shared-backend-rejected", old=MINIMUM_RUNTIME_VERSION, shared=False)
+        run_case(base, "old-default-upgrades", expected=MINIMUM_RUNTIME_VERSION, updates=1)
+        run_case(base, "previous-analysis-upgrades", old="1.1.0", expected=MINIMUM_RUNTIME_VERSION, updates=1)
+        run_case(base, "previous-patch-upgrades", old="1.2.0", expected=MINIMUM_RUNTIME_VERSION, updates=1)
         run_case(base, "explicit-previous-patch-kept", old="1.2.0", explicit=True, expected="1.2.0")
         run_case(base, "explicit-previous-analysis-kept", old="1.1.0", explicit=True, expected="1.1.0")
-        run_case(base, "current-default-kept", old="1.2.2", expected="1.2.2")
+        run_case(base, "current-default-kept", old=MINIMUM_RUNTIME_VERSION, expected=MINIMUM_RUNTIME_VERSION)
         run_case(base, "newer-default-kept", old="1.3.0", expected="1.3.0")
         run_case(base, "offline-old-kept", offline=True, expected="1.0.2", updates=1)
-        run_case(base, "offline-current-kept", old="1.2.2", offline=True, force=True,
-                 expected="1.2.2", updates=1)
+        run_case(base, "offline-current-kept", old=MINIMUM_RUNTIME_VERSION, offline=True, force=True,
+                 expected=MINIMUM_RUNTIME_VERSION, updates=1)
         run_case(base, "explicit-old-kept", explicit=True, expected="1.0.2")
         run_case(base, "explicit-invalid-fails", old="", explicit=True)
         run_case(base, "explicit-force-kept", explicit=True, force=True, expected="1.0.2")
-        run_case(base, "missing-default-installs", old="", expected="1.2.2", updates=1)
+        run_case(base, "missing-default-installs", old="", expected=MINIMUM_RUNTIME_VERSION, updates=1)
         run_case(base, "missing-offline-fails", old="", offline=True, updates=1)
         run_case(base, "old-latest-limits", release="1.0.3", expected="1.0.3", updates=1)
         run_case(base, "force-newer-no-downgrade", old="1.3.0", force=True,
