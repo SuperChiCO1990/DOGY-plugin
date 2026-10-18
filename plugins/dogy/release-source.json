@@ -2,5 +2,5 @@
   "repository": "SuperChiCO1990/DOGY-plugin",
   "executable_asset": "DOGY.exe",
   "manifest_asset": "dogy-release.json",
-  "minimum_runtime_version": "1.2.5"
+  "minimum_runtime_version": "1.0.0"
 }

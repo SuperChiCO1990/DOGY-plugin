@@ -24,17 +24,17 @@ try {
     if (-not $runtime.shared_mcp) {
         throw 'This plugin requires the DOGY shared-backend program. Update DOGY, then run setup again; the previous connection is preserved.'
     }
-    $videoMemoryAvailable = [version]$runtime.version -ge [version]'1.1.0'
-    $denseFramesAvailable = [version]$runtime.version -ge [version]'1.1.1'
-    $efficientAnalysisAvailable = [version]$runtime.version -ge [version]'1.2.0'
+    $videoMemoryAvailable = [version]$runtime.version -ge [version]'1.0.0'
+    $denseFramesAvailable = [version]$runtime.version -ge [version]'1.0.0'
+    $efficientAnalysisAvailable = [version]$runtime.version -ge [version]'1.0.0'
     if (-not $denseFramesAvailable) {
-        $warning += ' Denser frame analysis requires DOGY 1.1.1 or later; the selected program keeps its previous sampling policy.'
+        $warning += ' Denser frame analysis requires DOGY 1.0.0 or later; the selected program keeps its previous sampling policy.'
     }
     if (-not $videoMemoryAvailable) {
-        $warning += ' DOGY ' + $runtime.version + ' is selected. Download tools remain available; video memory requires DOGY 1.1.0 or later.'
+        $warning += ' DOGY ' + $runtime.version + ' is selected. Download tools remain available; video memory requires DOGY 1.0.0 or later.'
     }
     if (-not $efficientAnalysisAvailable) {
-        $warning += ' Overview and time-range analysis require DOGY 1.2.0 or later.'
+        $warning += ' Overview and time-range analysis require DOGY 1.0.0 or later.'
     }
     if ($warning) { [Console]::Error.WriteLine('DOGY setup: ' + $warning.Trim()) }
     [IO.Directory]::CreateDirectory($data) | Out-Null
